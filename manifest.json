@@ -1,5 +1,5 @@
 {
-  "name": "Affiliate Commission Calculator",
+  "name": "Affiliate Commission & Payout Calculator",
   "short_name": "DSynq Calc",
   "start_url": "./index.html",
   "display": "standalone",
@@ -8,10 +8,11 @@
   "description": "Weekly affiliate commission and payout calculation tool",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135706.png",
-      "sizes": "512x512",
+      "src": "icon.png",
+      "sizes": "640x640",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
+
