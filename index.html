@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Affiliate Commission & Payout Calculator By DSynq</title>
+  
+  <!-- PWA Manifest & Mobile Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#00A887" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="DSynq Calc" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135706.png" />
+
+  <!-- Register PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('PWA Service Worker registered'))
+          .catch((err) => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-warm: #FAF7EE;
+      --card-bg: #FFFFFF;
+      --primary-dark: #0D322B;
+      --primary-forest: #13443B;
+      --accent-teal: #00A887;
+      --accent-hover: #008A6E;
+      --accent-mint-light: #E6F7F3;
+      --text-muted: #526B63;
+      --border-color: #DDE5E0;
+      --table-header-bg: #F4F7F5;
+      --status-positive: #0A6A4E;
+      --status-negative: #B42318;
+      --dropzone-bg: #FBFCFA;
+      --shadow-elevation: 0 10px 30px rgba(13, 50, 43, 0.05);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+      background-color: var(--bg-warm); 
+      color: var(--primary-dark); 
+      padding: 40px 20px; 
+      line-height: 1.5;
+    }
+
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 24px; 
+    }
+
+    header { 
+      border-bottom: 1px solid var(--border-color); 
+      padding-bottom: 20px; 
+    }
+
+    header h1 { 
+      font-size: 26px; 
+      font-weight: 700; 
+      color: var(--primary-dark); 
+      letter-spacing: -0.3px;
+    }
+
+    .brand {
+      color: #00A887;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    header p { 
+      font-size: 14px; 
+      color: var(--text-muted); 
+      margin-top: 6px; 
+    }
+    
+    .card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--border-color); 
+      border-radius: 12px; 
+      padding: 24px; 
+      box-shadow: var(--shadow-elevation); 
+    }
+
+    .controls { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 20px; 
+      align-items: flex-end; 
+      justify-content: space-between; 
+    }
+
+    .input-group { 
+      flex: 1; 
+      min-width: 300px; 
+    }
+    
+    .upload-label { 
+      display: block; 
+      font-size: 12px; 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      color: var(--text-muted); 
+      margin-bottom: 8px; 
+      letter-spacing: 0.6px;
+    }
+
+    .file-dropzone {
+      border: 2px dashed var(--border-color);
+      padding: 28px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      background: var(--dropzone-bg);
+      display: block;
+      color: var(--primary-forest);
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .file-dropzone:hover {
+      border-color: var(--accent-teal);
+      background: var(--accent-mint-light);
+      color: var(--accent-hover);
+    }
+
+    input[type="file"] { 
+      display: none; 
+    }
+    
+    button { 
+      padding: 14px 24px; 
+      font-size: 14px; 
+      font-weight: 600; 
+      border-radius: 6px; 
+      border: none; 
+      cursor: pointer; 
+      transition: background-color 0.2s ease, transform 0.1s ease; 
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:disabled { 
+      background: var(--border-color); 
+      color: #8C9E96; 
+      cursor: not-allowed; 
+      box-shadow: none;
+    }
+
+    button.active { 
+      background: var(--accent-teal); 
+      color: #FFFFFF; 
+    }
+
+    button.active:hover { 
+      background: var(--accent-hover); 
+    }
+
+    button.active:active {
+      transform: scale(0.98);
+    }
+
+    #errorBanner { 
+      display: none; 
+      background: #FFF5F5; 
+      border: 1px solid #FED7D7; 
+      color: var(--status-negative); 
+      padding: 14px 16px; 
+      border-radius: 8px; 
+      font-size: 14px; 
+    }
+
+    #statusBanner { 
+      display: none; 
+      color: var(--accent-hover); 
+      font-size: 13px; 
+      font-weight: 600; 
+      margin-top: 10px; 
+    }
+
+    .table-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .table-header-bar {
+      padding: 16px 20px; 
+      background: var(--table-header-bg); 
+      border-bottom: 1px solid var(--border-color); 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+    }
+
+    .table-container { 
+      overflow-x: auto; 
+      max-height: 550px;
+    }
+
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 13px; 
+      text-align: left; 
+    }
+
+    th { 
+      background: var(--table-header-bg); 
+      color: var(--primary-forest); 
+      font-weight: 700; 
+      text-transform: uppercase; 
+      font-size: 11px; 
+      letter-spacing: 0.5px;
+      padding: 14px 16px; 
+      border-bottom: 1px solid var(--border-color); 
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    td { 
+      padding: 14px 16px; 
+      border-bottom: 1px solid #EDF2EE; 
+      vertical-align: middle; 
+      color: var(--primary-dark);
+    }
+
+    tr:hover td { 
+      background: #FBFDFB; 
+    }
+
+    .text-right { 
+      text-align: right; 
+    }
+    
+    .badge { 
+      display: inline-block; 
+      padding: 4px 8px; 
+      border-radius: 4px; 
+      font-size: 11px; 
+      font-weight: 600; 
+    }
+
+    .badge-code { 
+      color: var(--accent-teal); 
+      font-weight: 700; 
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+      font-size: 12px; 
+    }
+
+    .badge-new { 
+      background: var(--accent-mint-light); 
+      color: var(--accent-hover); 
+      margin-right: 4px; 
+    }
+
+    .badge-upg { 
+      background: #FEF6E7; 
+      color: #9A6009; 
+    }
+
+    .badge-pkg { 
+      background: #F4F7F5; 
+      border: 1px solid var(--border-color); 
+      color: var(--primary-forest); 
+    }
+    
+    .payout { 
+      color: var(--status-positive); 
+      font-weight: 700; 
+    }
+
+    .tds { 
+      color: var(--status-negative); 
+      font-weight: 500; 
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Affiliate Commission & Payout Calculator By <span class="brand">DSynq</span></h1>
+    <p>Upload your weekly sales Excel file to auto-calculate gross commission, 2% TDS deduction, and net payouts.</p>
+  </header>
+
+  <div id="errorBanner"></div>
+
+  <section class="card">
+    <div class="controls">
+      <div class="input-group">
+        <label class="upload-label">Weekly Sales File (.xlsx, .xls, .csv)</label>
+        <label class="file-dropzone" for="excelFile">
+          <span id="dropzoneText">📄 Click or drag & drop weekly sales file here</span>
+          <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" />
+        </label>
+        <div id="statusBanner"></div>
+      </div>
+      <div>
+        <button id="downloadBtn" disabled>📥 Download Payout Excel (.xlsx)</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="resultsSection" class="card table-card" style="display: none;">
+    <div class="table-header-bar">
+      <h2 id="summaryHeading" style="font-size: 15px; font-weight: 700; color: var(--primary-dark);">Weekly Summary</h2>
+      <span class="badge" style="background: var(--accent-mint-light); color: var(--accent-hover); border: 1px solid #CEEFE6;">TDS: 2% Flat</span>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Sponsor Code</th>
+            <th>Sponsor Name</th>
+            <th>Sponsor Package</th>
+            <th>Sales Counts</th>
+            <th>Plan Breakdown</th>
+            <th class="text-right">Gross Comm. (₹)</th>
+            <th class="text-right">2% TDS (₹)</th>
+            <th class="text-right">Net Payout (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="summaryRows"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  const RANKS = { lite: 1, basic: 2, mid: 3, advance: 4, supreme: 5 };
+  const COMMISSIONS = { lite: 800, basic: 2000, mid: 4000, advance: 6000, supreme: 10500 };
+
+  const NEW_PLANS_BY_AMOUNT = {
+    1499: { pkg: "Lite", rank: 1, comm: 800, key: "lite" },
+    3499: { pkg: "Basic", rank: 2, comm: 2000, key: "basic" },
+    5999: { pkg: "Mid", rank: 3, comm: 4000, key: "mid" },
+    8999: { pkg: "Advance", rank: 4, comm: 6000, key: "advance" },
+    15999: { pkg: "Supreme", rank: 5, comm: 10500, key: "supreme" }
+  };
+
+  const UPGRADES_BY_AMOUNT = {
+    2000: { from: "lite", to: "basic", targetRank: 2, comm: 1200, label: "Lite to Basic" },
+    4500: { from: "lite", to: "mid", targetRank: 3, comm: 3200, label: "Lite to Mid" },
+    7500: { from: "lite", to: "advance", targetRank: 4, comm: 5200, label: "Lite to Advance" },
+    14500: { from: "lite", to: "supreme", targetRank: 5, comm: 9700, label: "Lite to Supreme" },
+    2500: { from: "basic", to: "mid", targetRank: 3, comm: 2000, label: "Basic to Mid" },
+    5500: { from: "basic", to: "advance", targetRank: 4, comm: 4000, label: "Basic to Advance" },
+    12500: { from: "basic", to: "supreme", targetRank: 5, comm: 8500, label: "Basic to Supreme" },
+    3000: { from: "mid", to: "advance", targetRank: 4, comm: 2000, label: "Mid to Advance" },
+    10000: { from: "mid", to: "supreme", targetRank: 5, comm: 6500, label: "Mid to Supreme" },
+    7000: { from: "advance", to: "supreme", targetRank: 5, comm: 4500, label: "Advance to Supreme" }
+  };
+
+  let processedTransactions = [];
+  let payoutSummary = [];
+
+  function showError(msg) {
+    const errBox = document.getElementById("errorBanner");
+    errBox.innerHTML = "<strong>Error:</strong> " + msg;
+    errBox.style.display = "block";
+  }
+
+  function clearError() {
+    const errBox = document.getElementById("errorBanner");
+    errBox.style.display = "none";
+    errBox.innerHTML = "";
+  }
+
+  function normalizePkg(name) {
+    if (!name) return null;
+    const clean = String(name).toLowerCase().replace(/[^a-z]/g, "");
+    for (const key of ["supreme", "advance", "mid", "basic", "lite"]) {
+      if (clean.includes(key)) return key;
+    }
+    return null;
+  }
+
+  document.getElementById("excelFile").addEventListener("change", function(e) {
+    clearError();
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (typeof XLSX === "undefined") {
+      showError("SheetJS library failed to load. Please make sure you are connected to the internet.");
+      return;
+    }
+
+    document.getElementById("dropzoneText").textContent = "📄 " + file.name;
+    const statusBanner = document.getElementById("statusBanner");
+    statusBanner.textContent = "Processing: " + file.name + "...";
+    statusBanner.style.display = "block";
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: "" });
+
+        if (!rows || rows.length === 0) {
+          showError("The selected file contains no data rows.");
+          return;
+        }
+
+        processRows(rows);
+        statusBanner.textContent = "Processed: " + file.name;
+      } catch (err) {
+        showError("Failed to parse file: " + err.message);
+      }
+    };
+    reader.onerror = function() {
+      showError("Could not read local file.");
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  function processRows(rows) {
+    processedTransactions = rows.map((row) => {
+      const cleanRow = {};
+      Object.keys(row).forEach((k) => {
+        cleanRow[k.trim().toLowerCase()] = row[k];
+      });
+
+      const code = String(cleanRow["sponsor referral code"] || cleanRow["referral code"] || "UNKNOWN").trim();
+      const sponsorName = String(cleanRow["sponsor name"] || "N/A").trim();
+      const pType = String(cleanRow["purchase type"] || "").toLowerCase();
+      const rawAmt = Math.round(Number(cleanRow["total amount"]) || 0);
+      const pkgName = cleanRow["package name"] || "";
+      
+      const rawSponsorPkg = cleanRow["sponsor package"] || "";
+      const ownedTier = normalizePkg(rawSponsorPkg) || "supreme";
+      const ownedRank = RANKS[ownedTier];
+
+      let txType = "New Plan";
+      let planDesc = "";
+      let commission = 0;
+
+      if (UPGRADES_BY_AMOUNT[rawAmt] || pType.includes("upgrade")) {
+        txType = "Upgrade Plan";
+        if (UPGRADES_BY_AMOUNT[rawAmt]) {
+          const upg = UPGRADES_BY_AMOUNT[rawAmt];
+          planDesc = upg.label;
+          if (ownedRank >= upg.targetRank) {
+            commission = upg.comm;
+          } else {
+            const diff = COMMISSIONS[ownedTier] - COMMISSIONS[upg.from];
+            commission = Math.max(0, diff);
+          }
+        } else {
+          planDesc = "Custom Upgrade (₹" + rawAmt + ")";
+          commission = 0;
+        }
+      } 
+      else if (NEW_PLANS_BY_AMOUNT[rawAmt]) {
+        txType = "New Plan";
+        const info = NEW_PLANS_BY_AMOUNT[rawAmt];
+        planDesc = info.pkg + " Package";
+        const eligibleRank = Math.min(info.rank, ownedRank);
+        const eligibleKey = Object.keys(RANKS).find((k) => RANKS[k] === eligibleRank);
+        commission = COMMISSIONS[eligibleKey];
+      } 
+      else {
+        const fallbackKey = normalizePkg(pkgName);
+        if (fallbackKey) {
+          const soldRank = RANKS[fallbackKey];
+          const eligibleRank = Math.min(soldRank, ownedRank);
+          const eligibleKey = Object.keys(RANKS).find((k) => RANKS[k] === eligibleRank);
+          commission = COMMISSIONS[eligibleKey];
+          planDesc = fallbackKey.charAt(0).toUpperCase() + fallbackKey.slice(1) + " Package";
+        } else {
+          planDesc = "Unrecognized (₹" + rawAmt + ")";
+          commission = 0;
+        }
+      }
+
+      return {
+        date: cleanRow["date"] || "",
+        txId: cleanRow["transaction id"] || "",
+        code: code,
+        sponsorName: sponsorName,
+        sponsorPackage: rawSponsorPkg || ownedTier.toUpperCase(),
+        buyerName: cleanRow["name"] || "",
+        amount: rawAmt,
+        txType: txType,
+        planDesc: planDesc,
+        commission: commission
+      };
+    });
+
+    const groups = {};
+    processedTransactions.forEach((tx) => {
+      if (!groups[tx.code]) {
+        groups[tx.code] = {
+          code: tx.code,
+          name: tx.sponsorName,
+          sponsorPackage: tx.sponsorPackage,
+          newPlans: 0,
+          upgrades: 0,
+          totalTx: 0,
+          totalCommission: 0,
+          items: {}
+        };
+      }
+      const g = groups[tx.code];
+      g.totalTx += 1;
+      g.totalCommission += tx.commission;
+      if (tx.txType === "New Plan") g.newPlans += 1;
+      if (tx.txType === "Upgrade Plan") g.upgrades += 1;
+      g.items[tx.planDesc] = (g.items[tx.planDesc] || 0) + 1;
+    });
+
+    payoutSummary = Object.values(groups).map((g) => {
+      const tds = Math.round(g.totalCommission * 0.02 * 100) / 100;
+      const net = Math.round((g.totalCommission - tds) * 100) / 100;
+      const breakdown = Object.entries(g.items).map(([k, v]) => k + ": " + v).join(", ");
+      return { ...g, tds: tds, net: net, breakdown: breakdown };
+    });
+
+    renderUI();
+  }
+
+  function renderUI() {
+    const tbody = document.getElementById("summaryRows");
+    tbody.innerHTML = "";
+
+    payoutSummary.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="badge-code">${item.code}</td>
+        <td style="font-weight: 600; color: var(--primary-dark);">${item.name}</td>
+        <td><span class="badge badge-pkg">${item.sponsorPackage}</span></td>
+        <td style="white-space: nowrap;">
+          <span class="badge badge-new">${item.newPlans} New</span>
+          <span class="badge badge-upg">${item.upgrades} Upg</span>
+        </td>
+        <td style="color: var(--text-muted); font-size: 12px;">${item.breakdown}</td>
+        <td class="text-right" style="font-weight: 600;">₹${item.totalCommission.toLocaleString()}</td>
+        <td class="text-right tds">-₹${item.tds.toLocaleString()}</td>
+        <td class="text-right payout">₹${item.net.toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("summaryHeading").textContent = "Weekly Payout Summary (" + payoutSummary.length + " Sponsors)";
+    document.getElementById("resultsSection").style.display = "block";
+
+    const downloadBtn = document.getElementById("downloadBtn");
+    downloadBtn.disabled = false;
+    downloadBtn.className = "active";
+  }
+
+  document.getElementById("downloadBtn").addEventListener("click", function() {
+    if (payoutSummary.length === 0) return;
+
+    const summaryRows = payoutSummary.map((item) => ({
+      "Sponsor Referral Code": item.code,
+      "Sponsor Name": item.name,
+      "Sponsor Owned Package": item.sponsorPackage,
+      "New Plans Sold": item.newPlans,
+      "Upgrades Done": item.upgrades,
+      "Total Sales Count": item.totalTx,
+      "Sales Breakdown": item.breakdown,
+      "Total Commission (INR)": item.totalCommission,
+      "TDS Deducted (2%)": item.tds,
+      "Net Payout Amount (INR)": item.net
+    }));
+
+    const detailRows = processedTransactions.map((tx) => ({
+      "Date": tx.date,
+      "Transaction ID": tx.txId,
+      "Buyer Name": tx.buyerName,
+      "Sponsor Name": tx.sponsorName,
+      "Sponsor Referral Code": tx.code,
+      "Sponsor Package": tx.sponsorPackage,
+      "Total Amount": tx.amount,
+      "Transaction Type": tx.txType,
+      "Plan / Upgrade": tx.planDesc,
+      "Calculated Commission": tx.commission
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+    const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Payout Summary");
+    XLSX.utils.book_append_sheet(wb, wsDetail, "All Itemized Sales");
+
+    XLSX.writeFile(wb, "Weekly_Affiliate_Payout.xlsx");
+  });
+</script>
+</body>
+</html>
